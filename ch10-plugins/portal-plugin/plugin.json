@@ -1,0 +1,9 @@
+{
+    "id": "com.example.portal",
+    "name": "사내 포털",
+    "version": "0.1.0",
+    "min_server_version": "11.0.0",
+    "webapp": {
+        "bundle_path": "webapp/dist/main.js"
+    }
+}
