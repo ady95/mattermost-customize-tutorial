@@ -1,4 +1,5 @@
-# 6-1절: 사용자 정의 슬래시 커맨드 — /연락처 처리 서버
+# 6-1절: 사용자 정의 슬래시 커맨드 — /contacts 처리 서버
+# 주의: 커맨드 트리거는 영문 소문자·숫자만 가능합니다 (한글 트리거는 등록 거부 — v11.9 실측)
 # 필요 환경 변수: MM_SLASH_TOKEN (커맨드 등록 후 발급되는 토큰)
 import os
 
@@ -25,7 +26,7 @@ def contacts():
     if not keyword:
         return jsonify({
             "response_type": "ephemeral",
-            "text": "사용법: `/연락처 <검색어>` — 예: `/연락처 kim`",
+            "text": "사용법: `/contacts <검색어>` — 예: `/contacts kim`",
         })
 
     hits = {k: v for k, v in CONTACTS.items() if keyword in k}
