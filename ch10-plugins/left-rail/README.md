@@ -1,6 +1,6 @@
-# 10-5절: Slack 스타일 좌측 메뉴(LeftRail) — 웹앱 소스 수정
+# 10-6절: Slack 스타일 좌측 메뉴(LeftRail) — 웹앱 소스 수정
 
-이 항목은 플러그인이 아니라 **Mattermost 웹앱 소스 수정** 방식이므로, 독립 실행 코드가 아닌 변경 명세를 제공합니다. 반드시 책 10-5절과 함께 보세요.
+이 항목은 플러그인이 아니라 **Mattermost 웹앱 소스 수정** 방식이므로, 독립 실행 코드가 아닌 변경 명세를 제공합니다. 반드시 책 10-6절과 함께 보세요.
 
 ## 변경 파일 6개
 
@@ -34,4 +34,4 @@ grid-template-areas: "left-rail team-sidebar main app-sidebar";
 ## 유지보수 주의
 
 - root.tsx, _structure.scss는 업스트림 변경이 잦습니다 — 서버 업그레이드마다 `git apply --3way`로 patch 재적용
-- 웹앱 디렉터리는 Apache v2.0 라이선스입니다 (책 1-2절·10-5절)
+- 웹앱 디렉터리는 Apache v2.0 라이선스입니다 (책 1-2절·10-6절)
