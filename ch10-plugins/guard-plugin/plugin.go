@@ -32,7 +32,9 @@ func (p *GuardPlugin) OnActivate() error {
 
 // 훅 2: MessageWillBePosted — 게시 직전에 호출됩니다.
 // 반환값: (수정된 게시물, 거부 사유) — 사유가 있으면 게시가 차단됩니다.
-func (p *GuardPlugin) MessageWillBePosted(c *plugin.Context, post *model.Post) (*model.Post, string) {
+func (p *GuardPlugin) MessageWillBePosted(
+	c *plugin.Context, post *model.Post,
+) (*model.Post, string) {
 	// 기능 1: 금칙어 차단
 	for _, w := range bannedWords {
 		if strings.Contains(post.Message, w) {
@@ -50,7 +52,9 @@ func (p *GuardPlugin) MessageWillBePosted(c *plugin.Context, post *model.Post) (
 }
 
 // 훅 3: ExecuteCommand — /보안규칙 처리. 외부 서버가 필요 없습니다.
-func (p *GuardPlugin) ExecuteCommand(c *plugin.Context, args *model.CommandArgs) (*model.CommandResponse, *model.AppError) {
+func (p *GuardPlugin) ExecuteCommand(
+	c *plugin.Context, args *model.CommandArgs,
+) (*model.CommandResponse, *model.AppError) {
 	text := fmt.Sprintf(
 		"#### 현재 보안 규칙\n- 금칙어 차단: %s\n- 주민등록번호 자동 마스킹",
 		strings.Join(bannedWords, ", "),

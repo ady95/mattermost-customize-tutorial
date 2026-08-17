@@ -2,7 +2,7 @@
 # 필요 환경 변수: MM_URL, MM_BOT_TOKEN, (선택) REPORT_REPO, GITHUB_TOKEN, MM_WEBHOOK_URL
 # 주기 실행 예: 0 9 * * 1-5 cd /opt/reportbot && python3 report_bot.py >> report.log 2>&1
 import os
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 
 import requests
 
@@ -12,27 +12,55 @@ REPO = os.environ.get("REPORT_REPO", "mattermost/mattermost")
 GH_TOKEN = os.environ.get("GITHUB_TOKEN", "")
 TEAM = os.environ.get("MM_TEAM", "ourcompany")
 CHANNEL = os.environ.get("MM_CHANNEL", "town-square")
+KST = timezone(timedelta(hours=9))
+
+
+def gh_paged(path, **params):
+    """페이지를 끝까지 따라가며 모두 모읍니다 (GitHub는 한 페이지 최대 100건).
+    대형 저장소에서는 호출량이 늘어나므로 GITHUB_TOKEN 설정을 권합니다."""
+    headers = {"Authorization": f"Bearer {GH_TOKEN}"} if GH_TOKEN else {}
+    items, page = [], 1
+    while True:
+        r = requests.get(f"https://api.github.com{path}", headers=headers,
+                         params={**params, "per_page": 100, "page": page}, timeout=15)
+        r.raise_for_status()
+        batch = r.json()
+        items.extend(batch)
+        if len(batch) < 100:
+            return items
+        page += 1
+
+
+def yesterday_range():
+    """어제 00:00~오늘 00:00(한국 시간)을 GitHub API용 UTC 문자열로 변환"""
+    today = datetime.now(KST).replace(hour=0, minute=0, second=0, microsecond=0)
+    start = today - timedelta(days=1)
+
+    def to_utc(d):
+        return d.astimezone(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+
+    return to_utc(start), to_utc(today)
 
 
 def fetch_github_stats(repo):
     """어제 하루의 저장소 활동을 수집 — 실무에서는 사내 지표 조회로 교체"""
-    since = (datetime.utcnow() - timedelta(days=1)).strftime("%Y-%m-%dT00:00:00Z")
-    headers = {"Authorization": f"Bearer {GH_TOKEN}"} if GH_TOKEN else {}
+    since, until = yesterday_range()
 
-    def gh(path, **params):
-        r = requests.get(f"https://api.github.com{path}",
-                         headers=headers, params=params, timeout=15)
-        r.raise_for_status()
-        return r.json()
+    # 커밋 — since와 until을 함께 줘서 어제 하루로 정확히 한정
+    commits = gh_paged(f"/repos/{repo}/commits", since=since, until=until)
 
-    commits = gh(f"/repos/{repo}/commits", since=since, per_page=100)
-    issues = gh(f"/repos/{repo}/issues", state="open", since=since, per_page=100)
-    pulls = gh(f"/repos/{repo}/pulls", state="open", per_page=100)
+    # 이슈 — Issues API는 PR도 함께 돌려주므로 pull_request 키가 있는 항목을 제외
+    issues_raw = gh_paged(f"/repos/{repo}/issues", state="all", since=since)
+    updated_issues = [i for i in issues_raw
+                      if "pull_request" not in i and since <= i["updated_at"] < until]
+
+    # 열린 PR — 기간 집계가 아니라 "현재 열려 있는 수"입니다
+    open_prs = gh_paged(f"/repos/{repo}/pulls", state="open")
 
     return {
         "commits": len(commits),
-        "updated_issues": len(issues),
-        "open_prs": len(pulls),
+        "updated_issues": len(updated_issues),
+        "open_prs": len(open_prs),
     }
 
 
@@ -43,8 +71,8 @@ def build_report(stats):
 | 지표 | 값 |
 |:---|---:|
 | 어제 커밋 | {stats['commits']}건 |
-| 갱신된 이슈 | {stats['updated_issues']}건 |
-| 열린 PR | {stats['open_prs']}건 |
+| 어제 갱신된 이슈 | {stats['updated_issues']}건 |
+| 현재 열린 PR | {stats['open_prs']}건 |
 
 대상 저장소: `{REPO}` · 자동 생성 리포트입니다.
 """

@@ -15,7 +15,9 @@ type Plugin struct {
 }
 
 // ServeHTTP 훅 — /plugins/<플러그인id> 주소로 오는 HTTP 요청을 처리합니다.
-func (p *Plugin) ServeHTTP(c *plugin.Context, w http.ResponseWriter, r *http.Request) {
+func (p *Plugin) ServeHTTP(
+	c *plugin.Context, w http.ResponseWriter, r *http.Request,
+) {
 	fmt.Fprint(w, "Hello, world! 첫 플러그인이 응답했습니다.")
 }
 
